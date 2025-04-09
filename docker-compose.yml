@@ -1,0 +1,13 @@
+version: "3"
+services:
+  myserver:
+    image: my-server-server:latest
+    volumes:
+      - abc:/www
+volumes:
+  abc:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./www
