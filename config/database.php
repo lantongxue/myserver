@@ -1,16 +1,18 @@
 <?php
+$driver = env('DB_DRIVER', 'mysql');
+var_dump($driver);
 return  [
-    'default' => 'mysql',
+    'default' => env('DB_DRIVER', 'mysql'),
     'connections' => [
         'mysql' => [
             'driver'      => 'mysql',
-            'host'        => '127.0.0.1',
-            'port'        => '3306',
-            'database'    => 'myserver',
-            'username'    => 'root',
-            'password'    => 'root',
-            'charset'     => 'utf8mb4',
-            'collation'   => 'utf8mb4_general_ci',
+            'host'        => env('DB_MYSQL_HOST'),
+            'port'        => env('DB_MYSQL_PORT', 3306),
+            'database'    => env('DB_MYSQL_NAME'),
+            'username'    => env('DB_MYSQL_USER'),
+            'password'    => env('DB_MYSQL_PASS'),
+            'charset'     => env('DB_MYSQL_CHARSET', 'utf8mb4'),
+            'collation'   => env('DB_MYSQL_CHARSET_COLLATION', 'utf8mb4_general_ci'),
             'prefix'      => '',
             'strict'      => true,
             'engine'      => null,
@@ -24,6 +26,11 @@ return  [
                 'idle_timeout' => 60,
                 'heartbeat_interval' => 50,
             ],
+        ],
+        'sqlite' => [
+            'driver'   => 'sqlite',
+            'database' => env('DB_SQLITE_DB'),
+            'prefix'   => '',
         ],
     ],
 ];

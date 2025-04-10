@@ -1,13 +1,18 @@
-version: "3"
 services:
   myserver:
-    image: my-server-server:latest
-    volumes:
-      - abc:/www
-volumes:
-  abc:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./www
+    image: ghcr.io/lantongxue/myserver:latest
+    environment:
+      # 数据库类型支持：mysql、sqlite
+      - DB_DRIVER=${DB_DRIVER}
+      # mysql配置
+      - DB_MYSQL_HOST=${DB_MYSQL_HOST}
+      - DB_MYSQL_PORT=${DB_MYSQL_PORT}
+      - DB_MYSQL_NAME=${DB_MYSQL_NAME}
+      - DB_MYSQL_USER=${DB_MYSQL_USER}
+      - DB_MYSQL_PASS=${DB_MYSQL_PASS}
+      - DB_MYSQL_CHARSET=${DB_MYSQL_CHARSET}
+      - DB_MYSQL_CHARSET_COLLATION=${DB_MYSQL_CHARSET_COLLATION}
+      # sqlite配置
+      - DB_SQLITE_DB=${DB_SQLITE_DB}
+    ports:
+      - "8787:8787"

@@ -33,6 +33,76 @@
 
 此系统基于`php`和`webman`框架开发，参考`webman`官方的运行方式。但是我建议使用`docker`部署。
 
+## docker部署(推荐)
+
+支持的环境变量
+
+| 变量                         | 作用                    | 示例                      |
+|----------------------------|-----------------------|-------------------------|
+| DB_DRIVER                  | 数据库驱动`mysql`、`sqlite` | 默认为`mysql`              |
+| DB_MYSQL_HOST              | MySQL数据库地址            | `127.0.0.1`             |
+| DB_MYSQL_PORT              | MySQL数据库端口            | 默认为`3306`               |
+| DB_MYSQL_NAME              | MySQL数据库名字            | `myserver`              |
+| DB_MYSQL_USER              | MySQL数据库账号            | `root`                  |
+| DB_MYSQL_PASS              | MySQL数据库密码            | `root`                  |
+| DB_MYSQL_CHARSET           | MySQL数据库字符集           | 默认为`utf8mb4`            |
+| DB_MYSQL_CHARSET_COLLATION | MySQL数据库字符集排序规则       | 默认为`utf8mb4_general_ci` |
+| DB_SQLITE_DB               | sqlite数据库路径           | `./myserver.db`         |
+
+创建并写入环境变量到`.env`文件中。
+```shell
+cat > .env <<EOF
+# 数据库类型支持：mysql、sqlite
+DB_DRIVER=mysql
+
+# mysql配置
+DB_MYSQL_HOST=127.0.0.1
+DB_MYSQL_PORT=3306
+DB_MYSQL_NAME=myserver
+DB_MYSQL_USER=root
+DB_MYSQL_PASS=root
+DB_MYSQL_CHARSET=utf8mb4
+DB_MYSQL_CHARSET_COLLATION=utf8mb4_general_ci
+
+# sqlite配置
+DB_SQLITE_DB=./myserver.db
+EOF
+```
+
+### docker一键部署
+```shell
+docker run -d name=myserver --env-file .env -p 8787:8787 ghcr.io/lantongxue/myserver:latest
+```
+
+### docker compose 部署
+创建`docker-compose.yml`文件，并确保`.env`和`docker-compose.yml`在同一目录中。
+```shell
+cat > docker-compose.yml <<EOF
+services:
+  myserver:
+    image: ghcr.io/lantongxue/myserver:latest
+    environment:
+      # 数据库类型支持：mysql、sqlite
+      - DB_DRIVER=${DB_DRIVER}
+      # mysql配置
+      - DB_MYSQL_HOST=${DB_MYSQL_HOST}
+      - DB_MYSQL_PORT=${DB_MYSQL_PORT}
+      - DB_MYSQL_NAME=${DB_MYSQL_NAME}
+      - DB_MYSQL_USER=${DB_MYSQL_USER}
+      - DB_MYSQL_PASS=${DB_MYSQL_PASS}
+      - DB_MYSQL_CHARSET=${DB_MYSQL_CHARSET}
+      - DB_MYSQL_CHARSET_COLLATION=${DB_MYSQL_CHARSET_COLLATION}
+      # sqlite配置
+      - DB_SQLITE_DB=${DB_SQLITE_DB}
+    ports:
+      - "8787:8787"
+EOF
+```
+运行
+```shell
+docker compose up -d
+```
+
 ## 手动部署
 
 
@@ -62,7 +132,9 @@ composer安装依赖
 composer install
 ```
 
-修改数据库信息，编辑`config/database.php`文件，根据你的实际情况修改。
+修改数据库信息，将根目录下的`.env.example`复制为`.env`，然后根据你的实际情况修改。
+
+默认支持`mysql`、`sqlite`两种数据库驱动。
 
 导入基本数据，用任何你熟悉的工具将`database/db.sql`导入到数据库中。
 
@@ -82,9 +154,11 @@ php windows.php
 
 更多用法参考`webman`官方文档。
 
-## docker部署
+## 访问系统
 
-> 还在研究github actions自动构建、发布镜像方式，稍安勿躁。也可以自己用docker打包镜像，Dockerfile已经编写好了
+再通过上述任意一种方式部署后，打开浏览器访问：http://your_ip:8787/app/admin
+
+默认的账号和密码是：admin/admin
 
 # 参与贡献
 
