@@ -1,6 +1,4 @@
 <?php
-$driver = env('DB_DRIVER', 'mysql');
-var_dump($driver);
 return  [
     'default' => env('DB_DRIVER', 'mysql'),
     'connections' => [
