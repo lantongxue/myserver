@@ -71,9 +71,11 @@
 
         <!-- 表格行工具栏 -->
         <script type="text/html" id="table-bar">
-            <button class="pear-btn pear-btn-xs tool-btn" lay-event="copy" permission="app.admin.appsmstoken.select">复制</button>
-            <button class="pear-btn pear-btn-xs tool-btn" lay-event="edit" permission="app.admin.appsmstoken.update">编辑</button>
-            <button class="pear-btn pear-btn-xs tool-btn" lay-event="remove" permission="app.admin.appsmstoken.delete">删除</button>
+            <div class="pear-btn-group pear-btn-group-xs">
+                <button class="pear-btn pear-btn-xs pear-btn-primary" lay-event="copy" permission="app.admin.appsmstoken.select">复制</button>
+                <button class="pear-btn pear-btn-xs pear-btn-success" lay-event="edit" permission="app.admin.appsmstoken.update">编辑</button>
+                <button class="pear-btn pear-btn-xs pear-btn-danger" lay-event="remove" permission="app.admin.appsmstoken.delete">删除</button>
+            </div>
         </script>
 
         <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>

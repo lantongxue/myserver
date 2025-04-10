@@ -106,8 +106,8 @@ docker compose up -d
 ## 手动部署
 
 
-| 基础环境 | 版本     |
-| -------- | -------- |
+| 基础环境     | 版本       |
+|----------|----------|
 | php      | >= 8.4.5 |
 | mysql    | >= 8.0   |
 | composer | >= 2     |
@@ -115,16 +115,17 @@ docker compose up -d
 php需要安装以下扩展
 
 
-| 扩展      | 版本 | 是否必装 |
-| --------- | ---- | -------- |
-| gd        | -    | ✔       |
-| pcntl     | -    | ✔       |
-| pdo_mysql | -    | ✔       |
-| sockets   | -    | ✔       |
-| event     | -    | ✔       |
-| imagic    | -    | ❌       |
-| redis     | -    | ❌       |
-| swoole    | -    | ❌       |
+| 扩展         | 版本 | 是否必装           |
+|------------|----|----------------|
+| gd         | -  | ✔              |
+| pcntl      | -  | ✔              |
+| pdo_mysql  | -  | ✔              |
+| pdo_sqlite | -  | ❌和pdo_mysql二选一 |
+| sockets    | -  | ✔              |
+| event      | -  | ✔              |
+| imagic     | -  | ❌              |
+| redis      | -  | ❌              |
+| swoole     | -  | ❌              |
 
 composer安装依赖
 

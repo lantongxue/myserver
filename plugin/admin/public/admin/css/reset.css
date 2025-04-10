@@ -2,13 +2,13 @@ button {
     line-height: 100% !important;
 }
 
-.pear-btn-md, .pear-btn-sm, .pear-btn-xs, .pear-btn {
-    line-height: 100%;
-    letter-spacing: 2px;
-    padding: 0 15px;
-    font-weight: 400;
-    font-size: 14px;
-}
+/*.pear-btn-md, .pear-btn-sm, .pear-btn-xs, .pear-btn {*/
+/*    line-height: 100%;*/
+/*    letter-spacing: 2px;*/
+/*    padding: 0 15px;*/
+/*    font-weight: 400;*/
+/*    font-size: 14px;*/
+/*}*/
 
 .layui-layer-btn {
     padding: 0 15px 19px;
@@ -47,15 +47,15 @@ button {
     color: #333;
 }
 
-.tool-btn.pear-btn-xs {
-    background: transparent;
-    font-weight: normal;
-    font-size: 14px;
-    color: #333;
-    border: none;
-    padding: 0 2px;
-    height: auto !important;
-}
+/*.tool-btn.pear-btn-xs {*/
+/*    background: transparent;*/
+/*    font-weight: normal;*/
+/*    font-size: 14px;*/
+/*    color: #333;*/
+/*    border: none;*/
+/*    padding: 0 2px;*/
+/*    height: auto !important;*/
+/*}*/
 
 .layui-iconpicker {
     max-width: 290px !important;
