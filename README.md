@@ -52,6 +52,9 @@
 创建并写入环境变量到`.env`文件中。
 ```shell
 cat > .env <<EOF
+# 是否开启调试模式
+APP_DEBUG=true
+
 # 数据库类型支持：mysql、sqlite
 DB_DRIVER=mysql
 

@@ -15,7 +15,7 @@
 use support\Request;
 
 return [
-    'debug' => true,
+    'debug' => env('APP_DEBUG', false),
     // 说明一下为什么忽略E_USER_DEPRECATED错误
     // 因为这个PR：https://github.com/cakephp/phinx/pull/2327
     // phinx 将会在0.17.0版本移除Util::mapClassNameToFileName方法，当前版本0.16.6标记了废弃
