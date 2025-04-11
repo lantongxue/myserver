@@ -37,6 +37,11 @@ class AppSmsTokenController extends Crud
         return view('app-sms-token/index');
     }
 
+    public function select(Request $request): Response
+    {
+        return parent::select($request);
+    }
+
     /**
      * 插入
      * @param Request $request
@@ -46,10 +51,10 @@ class AppSmsTokenController extends Crud
     public function insert(Request $request): Response
     {
         if ($request->method() === 'POST') {
-            $data = $this->insertInput($request);
-            $data['token'] = md5($data['ua'].$data['mobile'].time());
-            $id = $this->doInsert($data);
-            return $this->json(0, 'ok', ['id' => $id]);
+            $post = $request->post();
+            $post['token'] = md5($post['ua'].$post['mobile'].time());
+            $request->setPost($post);
+            return parent::insert($request);
         }
         return view('app-sms-token/insert');
     }
@@ -63,12 +68,17 @@ class AppSmsTokenController extends Crud
     public function update(Request $request): Response
     {
         if ($request->method() === 'POST') {
-            [$id, $data] = $this->updateInput($request);
-            $data['token'] = md5($data['ua'].$data['mobile'].time());
-            $this->doUpdate($id, $data);
-            return $this->json(0);
+            $post = $request->post();
+            $post['token'] = md5($post['ua'].$post['mobile'].time());
+            $request->setPost($post);
+            return parent::update($request);
         }
         return view('app-sms-token/update');
+    }
+
+    public function delete(Request $request): Response
+    {
+        return parent::delete($request);
     }
 
 }

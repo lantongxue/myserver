@@ -26,7 +26,7 @@ abstract class Crud extends Base
      * @return Response
      * @throws BusinessException
      */
-    public function select(Request $request): Response
+    protected function select(Request $request): Response
     {
         [$where, $format, $limit, $field, $order] = $this->selectInput($request);
         $query = $this->doSelect($where, $field, $order);
@@ -39,7 +39,7 @@ abstract class Crud extends Base
      * @return Response
      * @throws BusinessException
      */
-    public function insert(Request $request): Response
+    protected function insert(Request $request): Response
     {
         $data = $this->insertInput($request);
         $id = $this->doInsert($data);
@@ -52,7 +52,7 @@ abstract class Crud extends Base
      * @return Response
      * @throws BusinessException
      */
-    public function update(Request $request): Response
+    protected function update(Request $request): Response
     {
         [$id, $data] = $this->updateInput($request);
         $this->doUpdate($id, $data);
@@ -65,7 +65,7 @@ abstract class Crud extends Base
      * @return Response
      * @throws BusinessException
      */
-    public function delete(Request $request): Response
+    protected function delete(Request $request): Response
     {
         $ids = $this->deleteInput($request);
         $this->doDelete($ids);

@@ -35,6 +35,11 @@ class AppSmsController extends Crud
         return view('app-sms/index');
     }
 
+    public function select(Request $request): Response
+    {
+        return parent::select($request);
+    }
+
     public function selectType()
     {
         $items = $this->model->select('type')->distinct()->get();

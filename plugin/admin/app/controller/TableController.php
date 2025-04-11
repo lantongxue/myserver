@@ -696,6 +696,17 @@ class $controller_class extends Crud
     {
         return view('$template_path/index');
     }
+    
+    /**
+     * 查询
+     * @param Request \$request
+     * @return Response
+     * @throws BusinessException
+     */
+    public function select(Request \$request): Response
+    {
+        return parent::select(\$request);
+    }
 
     /**
      * 插入
@@ -723,6 +734,17 @@ class $controller_class extends Crud
             return parent::update(\$request);
         }
         return view('$template_path/update');
+    }
+    
+    /**
+     * 删除
+     * @param Request \$request
+     * @return Response
+     * @throws BusinessException
+     */
+    public function delete(Request \$request): Response
+    {
+        return parent::delete(\$request);
     }
 
 }
