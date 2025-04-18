@@ -17,7 +17,8 @@ return [
             "user" => $config['username'],
             "pass" => $config['password'],
             "port" => $config['port'],
-            "charset" => $config['charset']
+            "charset" => $config['charset'],
+            "collation" => $config['collation'],
         ]
     ]
 ];
