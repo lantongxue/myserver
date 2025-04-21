@@ -140,7 +140,10 @@ composer install
 
 默认支持`mysql`、`sqlite`两种数据库驱动。
 
-导入基本数据，用任何你熟悉的工具将`database/db.sql`导入到数据库中。
+导入/迁移基本数据：
+```shell
+php webman migrations:migrate
+```
 
 运行系统:
 

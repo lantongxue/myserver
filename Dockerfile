@@ -21,4 +21,4 @@ RUN composer install
 
 EXPOSE 8787
 
-ENTRYPOINT ["php", "webman", "start"]
+ENTRYPOINT ["./entrypoint.sh"]
