@@ -33,5 +33,20 @@ final class WaAdmins extends AbstractMigration
         $table->addColumn('updated_at', Column::DATETIME, ['comment' => '更新时间']);
         $table->addIndex('username', ['name' => 'username', 'unique' => true]);
         $table->create();
+
+        $table->insert([
+            'username' => 'admin',
+            'nickname' => '超级管理员',
+            // 密码为：admin
+            'password' => '$2y$12$42YVLih66nbBjkfoP75vxOjU/YqI1KDexWdudwhUrbWZSxw6PEoqu',
+            'avatar' => '/app/admin/avatar.png',
+            'email' => null,
+            'mobile' => null,
+            'status' => null,
+            'login_at' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $table->saveData();
     }
 }

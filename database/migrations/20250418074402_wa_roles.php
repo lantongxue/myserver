@@ -27,5 +27,14 @@ final class WaRoles extends AbstractMigration
         $table->addColumn('created_at', Column::DATETIME, ['comment' => '创建时间']);
         $table->addColumn('updated_at', Column::DATETIME, ['comment' => '更新时间']);
         $table->create();
+
+        $table->insert([
+            'name' => '超级管理员',
+            'rules' => '*',
+            'pid' => null,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        $table->saveData();
     }
 }

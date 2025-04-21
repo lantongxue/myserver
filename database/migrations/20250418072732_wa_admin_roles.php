@@ -25,5 +25,11 @@ final class WaAdminRoles extends AbstractMigration
         $table->addColumn('admin_id', Column::INTEGER, ['comment' => '管理员id']);
         $table->addIndex(['role_id', 'admin_id'], ['name' => 'role_admin_id', 'unique' => true]);
         $table->create();
+
+        $table->insert([
+            'role_id' => 1,
+            'admin_id' => 1
+        ]);
+        $table->saveData();
     }
 }
