@@ -37,17 +37,16 @@
 
 支持的环境变量
 
-| 变量                         | 作用                    | 示例                      |
-|----------------------------|-----------------------|-------------------------|
-| DB_DRIVER                  | 数据库驱动`mysql`、`sqlite` | 默认为`mysql`              |
-| DB_MYSQL_HOST              | MySQL数据库地址            | `127.0.0.1`             |
-| DB_MYSQL_PORT              | MySQL数据库端口            | 默认为`3306`               |
-| DB_MYSQL_NAME              | MySQL数据库名字            | `myserver`              |
-| DB_MYSQL_USER              | MySQL数据库账号            | `root`                  |
-| DB_MYSQL_PASS              | MySQL数据库密码            | `root`                  |
-| DB_MYSQL_CHARSET           | MySQL数据库字符集           | 默认为`utf8mb4`            |
-| DB_MYSQL_CHARSET_COLLATION | MySQL数据库字符集排序规则       | 默认为`utf8mb4_general_ci` |
-| DB_SQLITE_DB               | sqlite数据库路径           | `./myserver.db`         |
+| 变量                         | 作用              | 示例                      |
+|----------------------------|-----------------|-------------------------|
+| DB_DRIVER                  | 数据库驱动           | 默认为`mysql`              |
+| DB_MYSQL_HOST              | MySQL数据库地址      | `127.0.0.1`             |
+| DB_MYSQL_PORT              | MySQL数据库端口      | 默认为`3306`               |
+| DB_MYSQL_NAME              | MySQL数据库名字      | `myserver`              |
+| DB_MYSQL_USER              | MySQL数据库账号      | `root`                  |
+| DB_MYSQL_PASS              | MySQL数据库密码      | `root`                  |
+| DB_MYSQL_CHARSET           | MySQL数据库字符集     | 默认为`utf8mb4`            |
+| DB_MYSQL_CHARSET_COLLATION | MySQL数据库字符集排序规则 | 默认为`utf8mb4_general_ci` |
 
 创建并写入环境变量到`.env`文件中。
 ```shell
@@ -55,7 +54,7 @@ cat > .env <<EOF
 # 是否开启调试模式
 APP_DEBUG=true
 
-# 数据库类型支持：mysql、sqlite
+# 数据库类型支持：mysql
 DB_DRIVER=mysql
 
 # mysql配置
@@ -67,8 +66,6 @@ DB_MYSQL_PASS=root
 DB_MYSQL_CHARSET=utf8mb4
 DB_MYSQL_CHARSET_COLLATION=utf8mb4_general_ci
 
-# sqlite配置
-DB_SQLITE_DB=./myserver.db
 EOF
 ```
 
@@ -85,7 +82,7 @@ services:
   myserver:
     image: ghcr.io/lantongxue/myserver:latest
     environment:
-      # 数据库类型支持：mysql、sqlite
+      # 数据库类型支持：mysql
       - DB_DRIVER=${DB_DRIVER}
       # mysql配置
       - DB_MYSQL_HOST=${DB_MYSQL_HOST}
@@ -95,8 +92,6 @@ services:
       - DB_MYSQL_PASS=${DB_MYSQL_PASS}
       - DB_MYSQL_CHARSET=${DB_MYSQL_CHARSET}
       - DB_MYSQL_CHARSET_COLLATION=${DB_MYSQL_CHARSET_COLLATION}
-      # sqlite配置
-      - DB_SQLITE_DB=${DB_SQLITE_DB}
     ports:
       - "8787:8787"
 EOF
@@ -123,7 +118,6 @@ php需要安装以下扩展
 | gd         | -  | ✔              |
 | pcntl      | -  | ✔              |
 | pdo_mysql  | -  | ✔              |
-| pdo_sqlite | -  | ❌和pdo_mysql二选一 |
 | sockets    | -  | ✔              |
 | event      | -  | ✔              |
 | imagic     | -  | ❌              |

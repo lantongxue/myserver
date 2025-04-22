@@ -11,7 +11,7 @@ RUN curl -sSLf \
 
 RUN apk add --no-cache linux-headers freetype-dev jpeg-dev sqlite-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd pcntl pdo pdo_mysql pdo_sqlite bcmath bz2 sockets \
+    && docker-php-ext-install -j$(nproc) gd pcntl pdo pdo_mysql bcmath bz2 sockets \
     && IPE_PROCESSOR_COUNT=$(nproc) install-php-extensions imagick redis event swoole ssh2 @composer
 
 COPY --exclude=./.git --exclude=./.github --exclude=./.idea --exclude=./.env --exclude=./runtime --exclude=./vendor . /www
