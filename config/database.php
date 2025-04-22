@@ -25,10 +25,5 @@ return  [
                 'heartbeat_interval' => 50,
             ],
         ],
-        'sqlite' => [
-            'driver'   => 'sqlite',
-            'database' => env('DB_SQLITE_DB'),
-            'prefix'   => '',
-        ],
     ],
 ];
