@@ -1160,5 +1160,13 @@ EOF;
         return trim($string,"\n");
     }
 
+    public static function getXmSelectData(array $data): array
+    {
+        $ret = [];
+        foreach ($data as $k => $v) {
+            $ret[] = ['name' => $v, 'value' => $k];
+        }
+        return $ret;
+    }
 
 }

@@ -1,0 +1,143 @@
+<?php
+namespace plugin\ssh\app\process;
+
+use plugin\ssh\app\model\SshToken;
+use plugin\ssh\app\process\protocol\SshProtocol;
+use plugin\ssh\app\process\protocol\WebSSHProtocol;
+use Workerman\Connection\TcpConnection;
+use Workerman\Protocols\Http\Request;
+use Workerman\Protocols\Websocket;
+use Workerman\Timer;
+use Workerman\Worker;
+
+class WebSSH
+{
+    public static array $clients = [];
+
+    public const string PATH = '/web-ssh/';
+
+    public const int PORT = 8788;
+
+    public static array $deny = [];
+
+    public const int HEARTBEAT_INTERVAL = 30; // 心跳间隔30秒
+
+    public const int HEARTBEAT_RESPONSE_TIME = 30; // 心跳响应时间30秒
+
+    public const int TOKEN_LIFETIME = 3600; // Token有效期1小时
+
+    public const int TOKEN_REFRESH_TIME = 300; // Token刷新时间5分钟
+
+    public function onWorkerStart(Worker $worker)
+    {
+        Timer::add(self::HEARTBEAT_INTERVAL, function() use ($worker) {
+            foreach (self::$clients as $client) {
+                // 超2小时没有交互则关闭连接
+                if (time() - $client['lastMessageTime'] > 7200) {
+                    $client['connection']->close();
+                } else {
+                    $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_HEARTBEAT, 'ping');
+                    $client['connection']->send($buff);
+                }
+            }
+        });
+    }
+
+    public function onConnect(TcpConnection $connection): void
+    {
+        if(in_array($connection->getRemoteIp(), self::$deny)) {
+            $connection->close();
+            return;
+        }
+    }
+
+    public function onWebSocketConnect(TcpConnection $connection, Request $request): void
+    {
+        $path = $request->path();
+        if(empty($path) || !str_starts_with($path, self::PATH)) {
+            $connection->close();
+            return;
+        }
+        $token = str_replace(self::PATH, '', $path);
+        if(empty($token)) {
+            $connection->close();
+            return;
+        }
+        $tokenObj = SshToken::where([
+            ['token', '=', $token],
+            ['expired', '>', date('Y-m-d H:i:s')],
+        ])->first();
+        if($tokenObj === null) {
+            $connection->close();
+            return;
+        }
+        try {
+            self::$clients[$connection->id] = [
+                'tokenObj' => $tokenObj,
+                'connection' => $connection,
+                'lastMessageTime' => time(),
+                'ssh' => new SshProtocol($tokenObj->server_id, $connection),
+            ];
+            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
+            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
+            $connection->send($buff);
+
+            if(self::$clients[$connection->id]['ssh']->connect()) {
+                console_log('ssh ok');
+                self::$clients[$connection->id]['ssh']->startShell();
+            } else {
+                $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
+                $connection->send($buff);
+                $connection->close();
+            }
+
+        } catch (\Exception $e) {
+            $connection->close();
+            return;
+        }
+    }
+
+    public function onMessage(TcpConnection $connection, $data): void
+    {
+        try {
+            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
+            $client = self::$clients[$connection->id] ?? null;
+            if ($client === null) {
+                $connection->close();
+                return;
+            }
+            $parsed = WebSSHProtocol::decode($data);
+            if ($parsed['cmd'] === WebSSHProtocol::CMD_HEARTBEAT) {
+                $pongTime = intval(str_replace('pong', '', $parsed['body']));
+                if (time() - $pongTime >= self::HEARTBEAT_RESPONSE_TIME) { // 心跳响应时间不能超过30秒
+                    $connection->close();
+                    return;
+                }
+            }
+            $client['lastMessageTime'] = time();// 如果token时间剩余5分钟内，自动续期
+            $expired = strtotime($client['tokenObj']->expired);
+            if ($expired - time() <= self::TOKEN_REFRESH_TIME) {
+                $expired += self::TOKEN_LIFETIME;
+                $client['tokenObj']->expired = date('Y-m-d H:i:s', $expired);
+                $client['tokenObj']->save();
+            }
+            if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
+                $client['ssh']->send($parsed['body']);
+            }
+            if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {
+                $size = explode('x', $parsed['body']);
+                $client['ssh']->resize(intval($size[0]), intval($size[1]));
+            }
+        } catch (\Exception $e) {
+            $connection->close();
+        }
+    }
+
+    public function onClose(TcpConnection $connection): void
+    {
+        if(array_key_exists($connection->id, self::$clients)) {
+            self::$clients[$connection->id]['ssh']->dispose();
+        }
+        unset(self::$clients[$connection->id]);
+    }
+}

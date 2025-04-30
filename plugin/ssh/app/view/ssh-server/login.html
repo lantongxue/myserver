@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="UTF-8">
+        <title>WebSSH</title>
+        <link rel="stylesheet" href="/app/admin/component/pear/css/pear.css" />
+        <link rel="stylesheet" href="/app/ssh/xterm/xterm.min.css" />
+        <style>
+            .layui-card-body {
+                height: calc(100vh - 83px);
+            }
+            #terminal-container {
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body class="pear-container">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md3">
+                <div class="layui-card">
+                    <div class="layui-card-header">文件管理</div>
+                    <div class="layui-card-body">
+                        <div id="sftp-container"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-col-md9">
+                <div class="layui-card">
+                    <div class="layui-card-header">终端</div>
+                    <div class="layui-card-body">
+                        <div id="terminal-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="/app/admin/component/layui/layui.js?v=2.8.12"></script>
+        <script src="/app/admin/component/pear/pear.js"></script>
+        <script src="/app/ssh/xterm/xterm.min.js"></script>
+        <script src="/app/ssh/xterm/addon-fit.min.js"></script>
+        <script src="/app/ssh/xterm/addon-web-links.min.js"></script>
+        <script src="/app/ssh/crc32.min.js"></script>
+        <script src="/app/ssh/text-encoding.min.js"></script>
+        <script src="/app/ssh/ssh.js"></script>
+
+        <script>
+
+            layui.use(["jquery"], function() {
+                const $ = layui.jquery;
+                const tree = layui.tree;
+
+                var data = [{title:'江西',id:1,children:[{title:'南昌',id:1000,children:[{title:'青山湖区',id:10001},{title:'高新区',id:10002}]},{title:'九江',id:1001},{title:'赣州',id:1002}]},{title:'广西',id:2,children:[{title:'南宁',id:2000},{title:'桂林',id:2001}]},{title:'陕西',id:3,children:[{title:'西安',id:3000},{title:'延安',id:3001}]},{title:'山西',id:3,children:[{title:'太原',id:4000},{title:'长治',id:4001}]}];
+                // 渲染
+                tree.render({
+                    elem: '#sftp-container',
+                    data: data,
+                    onlyIconControl: true,  // 是否仅允许节点左侧图标控制展开收缩
+                    click: function(obj){
+                        layer.msg(JSON.stringify(obj.data));
+                    }
+                });
+
+                const term = new Terminal({
+                    theme: {
+                        foreground: '#536870',
+                        background: '#fcf4dc',
+                        cursor: '#536870',
+
+                        black: '#56595c',
+                        brightBlack: '#45484b',
+
+                        red: '#c94c22',
+                        brightRed: '#bd3613',
+
+                        green: '#85981c',
+                        brightGreen: '#738a04',
+
+                        yellow: '#b4881d',
+                        brightYellow: '#a57705',
+
+                        blue: '#2e8bce',
+                        brightBlue: '#2176c7',
+
+                        magenta: '#d13a82',
+                        brightMagenta: '#c61c6f',
+
+                        cyan: '#32a198',
+                        brightCyan: '#259286',
+
+                        white: '#d3d0c9',
+                        brightWhite: '#c9c6bd'
+                    }
+                });
+                const fitAddon = new FitAddon.FitAddon();
+                term.loadAddon(fitAddon);
+                // Open the terminal in #terminal-container
+                term.open($('#terminal-container')[0]);
+                // Make the terminal's size and geometry fit the size of #terminal-container
+                fitAddon.fit();
+                window.onresize = function (e) {
+                    fitAddon.fit();
+                }
+                term.focus();
+
+                term.onResize = function(e) {
+                    console.log(e.cols, e.rows);
+                }
+
+                term.onData(function(e) {
+                    ws.send(BinaryProtocol.encode(0x21, e));
+                    term.write(e);
+                })
+
+                const s = (window.location.protocol === 'http:' ? 'ws:' : 'wss:') + '//<?=$ws?>';
+                const ws = new WebSocket(s);
+                ws.binaryType = 'arraybuffer';
+                ws.onopen = function (e) {
+                    term.write('认证中...');
+                }
+                ws.onmessage = function (e) {
+                    const parsed = BinaryProtocol.decode(e.data);
+                    if(parsed.cmd === 0x01) {
+                        term.writeln("授权成功");
+                    }
+                    if(parsed.cmd === 0x02) {
+                        ws.send(BinaryProtocol.encode(parsed.cmd, 'pong'+Math.ceil(Date.now()/1000)));
+                    }
+                    if(parsed.cmd === 0x22) {
+                        term.write(parsed.body);
+                    }
+                }
+                ws.onclose = function (e) {
+                    term.writeln('拒绝连接...');
+                }
+                ws.onerror = function (e) {
+                    term.writeln('出错了...');
+                }
+
+                function sendCommand(cmd, payload) {
+                    // 发送二进制数据
+                    ws.send(BinaryProtocol.encode(cmd, payload));
+                }
+            });
+
+        </script>
+
+    </body>
+</html>
