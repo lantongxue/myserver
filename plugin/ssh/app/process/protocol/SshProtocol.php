@@ -101,9 +101,9 @@ class SshProtocol
         }
         console_log('ssh startShell');
         $this->shellSession = ssh2_shell($this->sshSession, $this->termType, null, $this->cols, $this->rows, SSH2_TERM_UNIT_CHARS);
-        sleep(1);
         $this->shellStream = new ReadableResourceStream($this->shellSession);
-        $this->shellStream->on('data', function(mixed $data): void {
+
+        $this->shellStream->on('data', function($data): void {
             print_r($data);
             $this->onData($data);
         });
@@ -135,5 +135,6 @@ class SshProtocol
     public function dispose(): void
     {
         $this->shellStream?->close();
+        ssh2_disconnect($this->sshSession);
     }
 }

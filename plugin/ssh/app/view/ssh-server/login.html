@@ -97,22 +97,25 @@
                 term.open($('#terminal-container')[0]);
                 // Make the terminal's size and geometry fit the size of #terminal-container
                 fitAddon.fit();
-                window.onresize = function (e) {
-                    fitAddon.fit();
-                }
+
                 term.focus();
 
-                term.onResize = function(e) {
-                    console.log(e.cols, e.rows);
-                }
+                term.onResize(function(e) {
+                    ws.send(BinaryProtocol.encode(0x23, `${e.cols}x${e.rows}`));
+                });
 
                 term.onData(function(e) {
                     ws.send(BinaryProtocol.encode(0x21, e));
                     term.write(e);
-                })
+                });
+
+                window.onresize = function (e) {
+                    fitAddon.fit();
+                }
 
                 const s = (window.location.protocol === 'http:' ? 'ws:' : 'wss:') + '//<?=$ws?>';
                 const ws = new WebSocket(s);
+
                 ws.binaryType = 'arraybuffer';
                 ws.onopen = function (e) {
                     term.write('认证中...');
