@@ -3,6 +3,8 @@
 namespace plugin\ssh\app\process\protocol;
 
 use plugin\ssh\app\model\SshServer;
+use React\EventLoop\Loop;
+use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use Workerman\Connection\TcpConnection;
 
@@ -26,7 +28,7 @@ class SshProtocol
      */
     protected $shellSession = null;
 
-    protected ?ReadableResourceStream $shellStream = null;
+    protected ?DuplexResourceStream $shellStream = null;
 
     protected bool $auth = false;
 
@@ -99,12 +101,10 @@ class SshProtocol
         if(!$this->auth) {
             return;
         }
-        console_log('ssh startShell');
         $this->shellSession = ssh2_shell($this->sshSession, $this->termType, null, $this->cols, $this->rows, SSH2_TERM_UNIT_CHARS);
-        $this->shellStream = new ReadableResourceStream($this->shellSession);
-
+        $this->shellStream = new DuplexResourceStream($this->shellSession);
         $this->shellStream->on('data', function($data): void {
-            print_r($data);
+            echo $data;
             $this->onData($data);
         });
     }
@@ -115,13 +115,14 @@ class SshProtocol
         $this->connection->send($buff);
     }
 
-    public function send(string $data): int
+    public function send(string $data): bool
     {
-        $len = fwrite($this->shellSession, $data);
-        if($len !== false) {
-            return $len;
-        }
-        return -1;
+        return $this->shellStream->write($data);
+//        $len = fwrite($this->shellSession, $data);
+//        if($len !== false) {
+//            return $len;
+//        }
+//        return -1;
     }
 
     public function resize(int $cols, int $rows): void

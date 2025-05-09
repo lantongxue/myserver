@@ -16,24 +16,48 @@ class WebSSH
 
     public const string PATH = '/web-ssh/';
 
+    /**
+     * 默认端口
+     */
     public const int PORT = 8788;
 
+    /**
+     * 黑名单
+     * @var array
+     */
     public static array $deny = [];
 
-    public const int HEARTBEAT_INTERVAL = 30; // 心跳间隔30秒
+    /**
+     * 心跳间隔30秒
+     */
+    public const int HEARTBEAT_INTERVAL = 30;
 
-    public const int HEARTBEAT_RESPONSE_TIME = 30; // 心跳响应时间30秒
+    /**
+     * 心跳响应时间30秒
+     */
+    public const int HEARTBEAT_RESPONSE_TIME = 30;
 
-    public const int TOKEN_LIFETIME = 3600; // Token有效期1小时
+    /**
+     * Token有效期1小时
+     */
+    public const int TOKEN_LIFETIME = 3600;
 
-    public const int TOKEN_REFRESH_TIME = 300; // Token刷新时间5分钟
+    /**
+     * Token刷新时间5分钟
+     */
+    public const int TOKEN_REFRESH_TIME = 300;
+
+    /**
+     * 超2小时没有交互自动断开连接
+     */
+    public const int TIMEOUT_AUTO_CLOSE = 7200;
 
     public function onWorkerStart(Worker $worker)
     {
         Timer::add(self::HEARTBEAT_INTERVAL, function() use ($worker) {
             foreach (self::$clients as $client) {
                 // 超2小时没有交互则关闭连接
-                if (time() - $client['lastMessageTime'] > 7200) {
+                if (time() - $client['lastMessageTime'] > self::TIMEOUT_AUTO_CLOSE) {
                     $client['connection']->close();
                 } else {
                     $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_HEARTBEAT, 'ping');
@@ -83,7 +107,6 @@ class WebSSH
             $connection->send($buff);
 
             if(self::$clients[$connection->id]['ssh']->connect()) {
-                console_log('ssh ok');
                 self::$clients[$connection->id]['ssh']->startShell();
             } else {
                 $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');

@@ -106,7 +106,7 @@
 
                 term.onData(function(e) {
                     ws.send(BinaryProtocol.encode(0x21, e));
-                    term.write(e);
+                    //term.write(e);
                 });
 
                 window.onresize = function (e) {

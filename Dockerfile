@@ -20,5 +20,6 @@ WORKDIR /www
 RUN composer install
 
 EXPOSE 8787
+EXPOSE 8788
 
 ENTRYPOINT ["./entrypoint.sh"]
