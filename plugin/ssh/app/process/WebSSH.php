@@ -96,23 +96,16 @@ class WebSSH
             return;
         }
         try {
+            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
+            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
+            $connection->send($buff);
+
             self::$clients[$connection->id] = [
                 'tokenObj' => $tokenObj,
                 'connection' => $connection,
                 'lastMessageTime' => time(),
                 'ssh' => new SshProtocol($tokenObj->server_id, $connection),
             ];
-            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
-            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
-            $connection->send($buff);
-
-            if(self::$clients[$connection->id]['ssh']->connect()) {
-                self::$clients[$connection->id]['ssh']->startShell();
-            } else {
-                $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
-                $connection->send($buff);
-                $connection->close();
-            }
 
         } catch (\Exception $e) {
             $connection->close();
@@ -144,7 +137,19 @@ class WebSSH
                 $client['tokenObj']->expired = date('Y-m-d H:i:s', $expired);
                 $client['tokenObj']->save();
             }
+
+            if($parsed['cmd'] == WebSSHProtocol::CMD_REQUEST_SHELL) { // request shell
+                if(self::$clients[$connection->id]['ssh']->connect()) {
+                    self::$clients[$connection->id]['ssh']->startShell();
+                } else {
+                    $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
+                    $connection->send($buff);
+                    $connection->close();
+                }
+            }
+
             if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
+
                 $client['ssh']->send($parsed['body']);
             }
             if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {

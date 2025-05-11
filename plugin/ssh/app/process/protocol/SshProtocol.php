@@ -102,17 +102,19 @@ class SshProtocol
             return;
         }
         $this->shellSession = ssh2_shell($this->sshSession, $this->termType, null, $this->cols, $this->rows, SSH2_TERM_UNIT_CHARS);
-        $this->shellStream = new DuplexResourceStream($this->shellSession);
+        $loop = Loop::get();
+        $this->shellStream = new DuplexResourceStream($this->shellSession, $loop);
         $this->shellStream->on('data', function($data): void {
-            echo $data;
             $this->onData($data);
         });
+        $loop->run();
+
     }
 
     protected function onData(mixed $data): void
     {
         $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, $data);
-        $this->connection->send($buff);
+        $ret = $this->connection->send($buff);
     }
 
     public function send(string $data): bool

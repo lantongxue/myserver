@@ -124,6 +124,7 @@
                     const parsed = BinaryProtocol.decode(e.data);
                     if(parsed.cmd === 0x01) {
                         term.writeln("授权成功");
+                        ws.send(BinaryProtocol.encode(0x10, 'shell'));
                     }
                     if(parsed.cmd === 0x02) {
                         ws.send(BinaryProtocol.encode(parsed.cmd, 'pong'+Math.ceil(Date.now()/1000)));
