@@ -1,5 +1,6 @@
 <?php
 
+use plugin\ssh\app\process\ShellBackground;
 use plugin\ssh\app\process\WebSSH;
 
 

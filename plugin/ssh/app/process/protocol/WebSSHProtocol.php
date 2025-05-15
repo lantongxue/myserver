@@ -35,7 +35,7 @@ class WebSSHProtocol
 
     public const int CMD_HEARTBEAT = 0x02;
 
-    public const int CMD_REQUEST_SHELL = 0x10;
+    public const int CMD_LOGIN_SSH = 0x10;
 
     public const int CMD_SSH_INPUT = 0x21;
 

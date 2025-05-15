@@ -4,6 +4,7 @@ namespace plugin\ssh\app\process\protocol;
 
 use plugin\ssh\app\model\SshServer;
 use React\EventLoop\Loop;
+use React\EventLoop\LoopInterface;
 use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use Workerman\Connection\TcpConnection;
@@ -28,12 +29,14 @@ class SshProtocol
      */
     protected $shellSession = null;
 
-    protected ?DuplexResourceStream $shellStream = null;
+    protected ?ReadableResourceStream $shellStream = null;
 
     protected bool $auth = false;
 
     protected int $cols = 80;
     protected int $rows = 40;
+
+    protected ?LoopInterface $loop = null;
 
     protected string $termType = 'xterm';
 
@@ -52,6 +55,13 @@ class SshProtocol
     {
         $this->sshSession = ssh2_connect($this->server->host, $this->server->port);
         $this->auth = $this->auth();
+        $this->shellSession = ssh2_shell($this->sshSession, $this->termType, null, $this->cols, $this->rows, SSH2_TERM_UNIT_CHARS);
+        $this->loop = Loop::get();
+        $this->shellStream = new ReadableResourceStream($this->shellSession, $this->loop);
+        $this->shellStream->on('data', function($data): void {
+            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, $data);
+            $this->connection->send($buff);
+        });
         return $this->auth;
     }
 
@@ -101,36 +111,21 @@ class SshProtocol
         if(!$this->auth) {
             return;
         }
-        $this->shellSession = ssh2_shell($this->sshSession, $this->termType, null, $this->cols, $this->rows, SSH2_TERM_UNIT_CHARS);
-        $loop = Loop::get();
-        $this->shellStream = new DuplexResourceStream($this->shellSession, $loop);
-        $this->shellStream->on('data', function($data): void {
-            $this->onData($data);
-        });
-        $loop->run();
-
-    }
-
-    protected function onData(mixed $data): void
-    {
-        $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, $data);
-        $ret = $this->connection->send($buff);
+        $this->loop?->run();
     }
 
     public function send(string $data): bool
     {
-        return $this->shellStream->write($data);
-//        $len = fwrite($this->shellSession, $data);
-//        if($len !== false) {
-//            return $len;
-//        }
-//        return -1;
+        fwrite($this->shellSession, $data);
+        return true;
     }
 
     public function resize(int $cols, int $rows): void
     {
         // 最新版本的ssh2扩展已经支持此函数了
-        ssh2_shell_resize($this->shellSession, $cols, $rows);
+        if(function_exists('ssh2_shell_resize')) {
+            ssh2_shell_resize($this->shellSession, $cols, $rows);
+        }
         $this->cols = $cols;
         $this->rows = $rows;
     }
@@ -138,6 +133,8 @@ class SshProtocol
     public function dispose(): void
     {
         $this->shellStream?->close();
-        ssh2_disconnect($this->sshSession);
+        if($this->sshSession !== null) {
+            ssh2_disconnect($this->sshSession);
+        }
     }
 }

@@ -4,11 +4,13 @@ namespace plugin\ssh\app\process;
 use plugin\ssh\app\model\SshToken;
 use plugin\ssh\app\process\protocol\SshProtocol;
 use plugin\ssh\app\process\protocol\WebSSHProtocol;
+use Swoole\Process;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Websocket;
 use Workerman\Timer;
 use Workerman\Worker;
+
 
 class WebSSH
 {
@@ -115,14 +117,16 @@ class WebSSH
 
     public function onMessage(TcpConnection $connection, $data): void
     {
+        //console_log(\Workerman\Coroutine::getCurrent()->id());
         try {
+            $parsed = WebSSHProtocol::decode($data);
             $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
             $client = self::$clients[$connection->id] ?? null;
             if ($client === null) {
                 $connection->close();
                 return;
             }
-            $parsed = WebSSHProtocol::decode($data);
+
             if ($parsed['cmd'] === WebSSHProtocol::CMD_HEARTBEAT) {
                 $pongTime = intval(str_replace('pong', '', $parsed['body']));
                 if (time() - $pongTime >= self::HEARTBEAT_RESPONSE_TIME) { // 心跳响应时间不能超过30秒
@@ -138,18 +142,19 @@ class WebSSH
                 $client['tokenObj']->save();
             }
 
-            if($parsed['cmd'] == WebSSHProtocol::CMD_REQUEST_SHELL) { // request shell
-                if(self::$clients[$connection->id]['ssh']->connect()) {
-                    self::$clients[$connection->id]['ssh']->startShell();
+            if($parsed['cmd'] == WebSSHProtocol::CMD_LOGIN_SSH) { // request shell
+                if($client['ssh']->connect()) {
+                    $client['shellProcess'] = new Process(function() use($client) {
+                        $client['ssh']->startShell();
+                    });
+                    $client['shellProcess']->start();
                 } else {
                     $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
                     $connection->send($buff);
                     $connection->close();
                 }
             }
-
             if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
-
                 $client['ssh']->send($parsed['body']);
             }
             if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {
@@ -165,7 +170,11 @@ class WebSSH
     {
         if(array_key_exists($connection->id, self::$clients)) {
             self::$clients[$connection->id]['ssh']->dispose();
+            if(isset(self::$clients[$connection->id]['shellProcess'])) {
+                self::$clients[$connection->id]['shellProcess']->kill();
+            }
         }
         unset(self::$clients[$connection->id]);
+        console_log('['. $connection->id .'] closed');
     }
 }

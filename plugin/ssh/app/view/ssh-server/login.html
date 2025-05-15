@@ -100,21 +100,20 @@
 
                 term.focus();
 
-                term.onResize(function(e) {
-                    ws.send(BinaryProtocol.encode(0x23, `${e.cols}x${e.rows}`));
-                });
-
-                term.onData(function(e) {
-                    ws.send(BinaryProtocol.encode(0x21, e));
-                    //term.write(e);
-                });
-
                 window.onresize = function (e) {
                     fitAddon.fit();
                 }
 
                 const s = (window.location.protocol === 'http:' ? 'ws:' : 'wss:') + '//<?=$ws?>';
                 const ws = new WebSocket(s);
+
+                term.onResize(function(e) {
+                    ws.send(BinaryProtocol.encode(0x23, `${e.cols}x${e.rows}`));
+                });
+
+                term.onData(function(e) {
+                    ws.send(BinaryProtocol.encode(0x21, e));
+                });
 
                 ws.binaryType = 'arraybuffer';
                 ws.onopen = function (e) {
