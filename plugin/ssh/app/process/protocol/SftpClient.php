@@ -2,7 +2,7 @@
 
 namespace plugin\ssh\app\process\protocol;
 
-class SftpProtocol
+class SftpClient
 {
 
 }

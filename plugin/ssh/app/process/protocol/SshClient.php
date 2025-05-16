@@ -5,11 +5,10 @@ namespace plugin\ssh\app\process\protocol;
 use plugin\ssh\app\model\SshServer;
 use React\EventLoop\Loop;
 use React\EventLoop\LoopInterface;
-use React\Stream\DuplexResourceStream;
 use React\Stream\ReadableResourceStream;
 use Workerman\Connection\TcpConnection;
 
-class SshProtocol
+class SshClient
 {
     protected int $serverId = 0;
 
@@ -114,10 +113,9 @@ class SshProtocol
         $this->loop?->run();
     }
 
-    public function send(string $data): bool
+    public function send(string $data): bool|int
     {
-        fwrite($this->shellSession, $data);
-        return true;
+        return fwrite($this->shellSession, $data);
     }
 
     public function resize(int $cols, int $rows): void
