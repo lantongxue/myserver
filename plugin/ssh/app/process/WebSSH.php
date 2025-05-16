@@ -101,62 +101,52 @@ class WebSSH
             $connection->close();
             return;
         }
-        try {
-            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
-            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
-            $connection->send($buff);
+        $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
+        $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
+        $connection->send($buff);
 
-            self::$clients[$connection->id] = new WebSSHSession($tokenObj, $connection);
-
-        } catch (\Exception $e) {
-            $connection->close();
-            return;
-        }
+        self::$clients[$connection->id] = new WebSSHSession($tokenObj, $connection);
     }
 
     public function onMessage(TcpConnection $connection, $data): void
     {
-        try {
-            $parsed = WebSSHProtocol::decode($data);
-            $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
-            $client = self::$clients[$connection->id] ?? null;
-            if ($client === null) {
+        $parsed = WebSSHProtocol::decode($data);
+        $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
+        $client = self::$clients[$connection->id] ?? null;
+        if ($client === null) {
+            $connection->close();
+            return;
+        }
+
+        if ($parsed['cmd'] === WebSSHProtocol::CMD_HEARTBEAT) {
+            $pongTime = intval(str_replace('pong', '', $parsed['body']));
+            if (time() - $pongTime >= self::HEARTBEAT_RESPONSE_TIME) { // 心跳响应时间不能超过30秒
                 $connection->close();
                 return;
             }
+        }
+        $client->lastMessageTime = time();
+        // 如果token时间剩余5分钟内，自动续期
+        $expired = strtotime($client->token->expired);
+        if ($expired - time() <= self::TOKEN_REFRESH_TIME) {
+            $expired += self::TOKEN_LIFETIME;
+            $client->refreshTokenTime($expired);
+        }
 
-            if ($parsed['cmd'] === WebSSHProtocol::CMD_HEARTBEAT) {
-                $pongTime = intval(str_replace('pong', '', $parsed['body']));
-                if (time() - $pongTime >= self::HEARTBEAT_RESPONSE_TIME) { // 心跳响应时间不能超过30秒
-                    $connection->close();
-                    return;
-                }
+        if($parsed['cmd'] == WebSSHProtocol::CMD_LOGIN_SSH) { // request shell
+            if($client->loginSSH()) {
+                $client->openShell();
+            } else {
+                $client->response(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
+                $client->dispose();
             }
-            $client->lastMessageTime = time();
-            // 如果token时间剩余5分钟内，自动续期
-            $expired = strtotime($client->token->expired);
-            if ($expired - time() <= self::TOKEN_REFRESH_TIME) {
-                $expired += self::TOKEN_LIFETIME;
-                $client->refreshTokenTime($expired);
-            }
-
-            if($parsed['cmd'] == WebSSHProtocol::CMD_LOGIN_SSH) { // request shell
-                if($client->loginSSH()) {
-                    $client->openShell();
-                } else {
-                    $client->response(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
-                    $client->dispose();
-                }
-            }
-            if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
-                $client->writeShell($parsed['body']);
-            }
-            if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {
-                $size = explode('x', $parsed['body']);
-                $client->resizeShell(intval($size[0]), intval($size[1]));
-            }
-        } catch (\Exception $e) {
-            $connection->close();
+        }
+        if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
+            $client->writeShell($parsed['body']);
+        }
+        if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {
+            $size = explode('x', $parsed['body']);
+            $client->resizeShell(intval($size[0]), intval($size[1]));
         }
     }
 

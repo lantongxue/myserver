@@ -66,8 +66,8 @@ class WebSSHSession
 
     public function dispose(): void
     {
-        $this->sshClient?->dispose();
-        $this->shellProcess?->close();
-        $this->websocket?->close();
+        $this->sshClient->dispose();
+        $this->shellProcess->close();
+        $this->websocket->close();
     }
 }
