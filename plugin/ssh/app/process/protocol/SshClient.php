@@ -10,10 +10,6 @@ use Workerman\Connection\TcpConnection;
 
 class SshClient
 {
-    protected int $serverId = 0;
-
-    protected ?TcpConnection $connection = null;
-
     protected ?SshServer $server = null;
 
     /**
@@ -39,11 +35,8 @@ class SshClient
 
     protected string $termType = 'xterm';
 
-    public function __construct(int $serverId, TcpConnection $connection)
+    public function __construct(protected int $serverId, protected TcpConnection $connection)
     {
-        $this->serverId = $serverId;
-        $this->connection = $connection;
-
         $this->server = SshServer::find($serverId);
         if($this->server === null) {
             throw new \Exception('Server not found');
@@ -58,7 +51,7 @@ class SshClient
         $this->loop = Loop::get();
         $this->shellStream = new ReadableResourceStream($this->shellSession, $this->loop);
         $this->shellStream->on('data', function($data): void {
-            $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_SSH_OUTPUT, $data);
+            $buff = WebSSHProtocol::encode(Cmd::SshOutput, $data);
             $this->connection->send($buff);
         });
         return $this->auth;
@@ -103,6 +96,11 @@ class SshClient
         }
 
         return false;
+    }
+
+    public function getSession()
+    {
+        return $this->sshSession;
     }
 
     public function startShell(): void

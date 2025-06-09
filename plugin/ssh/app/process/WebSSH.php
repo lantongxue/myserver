@@ -2,10 +2,9 @@
 namespace plugin\ssh\app\process;
 
 use plugin\ssh\app\model\SshToken;
-use plugin\ssh\app\process\protocol\SshClient;
+use plugin\ssh\app\process\protocol\Cmd;
 use plugin\ssh\app\process\protocol\WebSSHProtocol;
 use plugin\ssh\app\process\protocol\WebSSHSession;
-use Swoole\Process;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request;
 use Workerman\Protocols\Websocket;
@@ -67,7 +66,7 @@ class WebSSH
                 if (time() - $client->lastMessageTime > self::TIMEOUT_AUTO_CLOSE) {
                     $client->dispose();
                 } else {
-                    $client->response(WebSSHProtocol::CMD_HEARTBEAT, 'ping');
+                    $client->response(Cmd::Heartbeat, 'ping');
                 }
             }
         });
@@ -102,10 +101,16 @@ class WebSSH
             return;
         }
         $connection->websocketType = Websocket::BINARY_TYPE_ARRAYBUFFER;
-        $buff = WebSSHProtocol::encode(WebSSHProtocol::CMD_AUTH_OK, '');
+        $buff = WebSSHProtocol::encode(Cmd::AuthOk, '');
         $connection->send($buff);
 
-        self::$clients[$connection->id] = new WebSSHSession($tokenObj, $connection);
+        try {
+            self::$clients[$connection->id] = new WebSSHSession($tokenObj, $connection);
+        } catch(\Exception $e) {
+            $buff = WebSSHProtocol::encode(Cmd::SshOutput, $e->getMessage());
+            $connection->send($buff);
+            $connection->close();
+        }
     }
 
     public function onMessage(TcpConnection $connection, $data): void
@@ -118,7 +123,7 @@ class WebSSH
             return;
         }
 
-        if ($parsed['cmd'] === WebSSHProtocol::CMD_HEARTBEAT) {
+        if ($parsed['cmd'] === Cmd::Heartbeat->value) {
             $pongTime = intval(str_replace('pong', '', $parsed['body']));
             if (time() - $pongTime >= self::HEARTBEAT_RESPONSE_TIME) { // 心跳响应时间不能超过30秒
                 $connection->close();
@@ -133,18 +138,18 @@ class WebSSH
             $client->refreshTokenTime($expired);
         }
 
-        if($parsed['cmd'] == WebSSHProtocol::CMD_LOGIN_SSH) { // request shell
+        if($parsed['cmd'] == Cmd::SshLogin->value) { // request shell
             if($client->loginSSH()) {
                 $client->openShell();
             } else {
-                $client->response(WebSSHProtocol::CMD_SSH_OUTPUT, '服务器连接失败');
+                $client->response(Cmd::SshOutput, '服务器连接失败');
                 $client->dispose();
             }
         }
-        if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_INPUT) {
+        if ($parsed['cmd'] === Cmd::SshInput->value) {
             $client->writeShell($parsed['body']);
         }
-        if ($parsed['cmd'] === WebSSHProtocol::CMD_SSH_RESIZE) {
+        if ($parsed['cmd'] === Cmd::SshResize->value) {
             $size = explode('x', $parsed['body']);
             $client->resizeShell(intval($size[0]), intval($size[1]));
         }

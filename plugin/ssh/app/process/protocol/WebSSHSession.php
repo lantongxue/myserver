@@ -8,10 +8,6 @@ use Workerman\Connection\TcpConnection;
 
 class WebSSHSession
 {
-    public ?SshToken $token = null;
-
-    public ?TcpConnection $websocket = null;
-
     public int $lastMessageTime = 0;
 
     public ?SshClient $sshClient = null;
@@ -20,16 +16,14 @@ class WebSSHSession
 
     public ?SftpClient $sftpClient = null;
 
-    public function __construct(SshToken $token, TcpConnection $connection)
+    public function __construct(public SshToken $token, public TcpConnection $websocket)
     {
-        $this->token = $token;
-        $this->websocket = $connection;
         $this->lastMessageTime = time();
-        $this->sshClient = new SshClient($token->server_id, $connection);
+        $this->sshClient = new SshClient($token->server_id, $websocket);
         $this->shellProcess = new Process(function(){
             $this->sshClient->startShell();
         });
-        $this->sftpClient = new SftpClient();
+        $this->sftpClient = new SftpClient($this->sshClient->getSession());
     }
 
     public function loginSSH(): bool
@@ -52,7 +46,7 @@ class WebSSHSession
         $this->sshClient->resize($cols, $rows);
     }
 
-    public function response(int $cmd, string $body): ?bool
+    public function response(Cmd $cmd, string $body): ?bool
     {
         $buff = WebSSHProtocol::encode($cmd, $body);
         return $this->websocket?->send($buff);
